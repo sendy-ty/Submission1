@@ -16,15 +16,14 @@ def load_data():
         "all_data.csv",                        # Lokasi relatif
         "./all_data.csv",                      # Lokasi eksplisit dalam direktori yang sama
         "../all_data.csv",                     # Satu direktori di atas
-        os.path.join(os.path.dirname(__file__), "all_data.csv")  # Menggunakan path absolut
+        os.path.join(os.path.dirname(__file__), "all_data.csv"),  # Menggunakan path absolut
+        "/mount/src/submission1/Dashboard/all_data.csv"  # Path deployment Streamlit
     ]
     
     # Mencoba membuka file dari berbagai kemungkinan lokasi
     for path in file_paths:
         try:
-            st.write(f"Mencoba membuka file dari: {path}")
             df = pd.read_csv(path)
-            st.success(f"Berhasil membuka file dari: {path}")
             return df
         except FileNotFoundError:
             continue
@@ -32,10 +31,7 @@ def load_data():
     # Jika file tidak ditemukan di semua lokasi, tampilkan pesan error
     st.error("File all_data.csv tidak ditemukan. Pastikan file tersedia di direktori yang benar.")
     
-    # Fallback jika file tidak ditemukan: gunakan contoh data kosong
-    st.warning("Menampilkan contoh data kosong. Upload all_data.csv untuk melihat dashboard lengkap.")
-    
-    # Buat uploader file sebagai alternatif
+    # Fallback jika file tidak ditemukan: gunakan uploader file
     uploaded_file = st.file_uploader("Upload file all_data.csv", type="csv")
     if uploaded_file is not None:
         df = pd.read_csv(uploaded_file)
