@@ -2,6 +2,7 @@ import streamlit as st
 import pandas as pd
 import matplotlib.pyplot as plt
 import seaborn as sns
+import os
 
 # Konfigurasi halaman Streamlit
 st.set_page_config(page_title="Dashboard Bike Sharing", layout="wide")
@@ -9,14 +10,53 @@ st.set_page_config(page_title="Dashboard Bike Sharing", layout="wide")
 # Caching data untuk meningkatkan performa
 @st.cache_data
 def load_data():
-    df = pd.read_csv("all_data.csv")  # Pastikan file ini tersedia dalam direktori kerja
-    return df
+    # Perbaikan path file untuk deployment
+    # Mencoba beberapa kemungkinan lokasi file
+    file_paths = [
+        "all_data.csv",                        # Lokasi relatif
+        "./all_data.csv",                      # Lokasi eksplisit dalam direktori yang sama
+        "../all_data.csv",                     # Satu direktori di atas
+        os.path.join(os.path.dirname(__file__), "all_data.csv")  # Menggunakan path absolut
+    ]
+    
+    # Mencoba membuka file dari berbagai kemungkinan lokasi
+    for path in file_paths:
+        try:
+            st.write(f"Mencoba membuka file dari: {path}")
+            df = pd.read_csv(path)
+            st.success(f"Berhasil membuka file dari: {path}")
+            return df
+        except FileNotFoundError:
+            continue
+    
+    # Jika file tidak ditemukan di semua lokasi, tampilkan pesan error
+    st.error("File all_data.csv tidak ditemukan. Pastikan file tersedia di direktori yang benar.")
+    
+    # Fallback jika file tidak ditemukan: gunakan contoh data kosong
+    st.warning("Menampilkan contoh data kosong. Upload all_data.csv untuk melihat dashboard lengkap.")
+    
+    # Buat uploader file sebagai alternatif
+    uploaded_file = st.file_uploader("Upload file all_data.csv", type="csv")
+    if uploaded_file is not None:
+        df = pd.read_csv(uploaded_file)
+        return df
+    else:
+        # Buat DataFrame contoh kosong jika tidak ada file di-upload
+        return pd.DataFrame({
+            "year_day": [], "month_day": [], "weekday_day": [],
+            "weathersit_day": [], "count_day": [], "casual_day": [], "registered_day": []
+        })
 
 # Memuat data
 df = load_data()
 
+# Periksa apakah dataframe kosong (fallback)
+if df.empty:
+    st.warning("Data kosong. Pastikan file all_data.csv tersedia atau upload file yang valid.")
+    st.stop()  # Hentikan eksekusi jika data kosong
+
 # Membentuk kolom tanggal berdasarkan year_day & month_day
-df["date"] = pd.to_datetime(df["year_day"].astype(str) + "-" + df["month_day"].astype(str))
+df["date"] = pd.to_datetime(df["year_day"].astype(str) + "-" + df["month_day"].astype(str), format="%Y-%m", errors='coerce')
 
 # Filter data 2 tahun terakhir
 df_filtered = df[df["year_day"] >= (df["year_day"].max() - 1)]
